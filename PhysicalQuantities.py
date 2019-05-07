@@ -334,7 +334,8 @@ class PhysicalQuantity:
         @raises TypeError: if any of the specified units are not compatible
         with the original unit
         """
-        units = list(map(_findUnit, units))
+        #units = list(map(_findUnit, units))
+        units = [_findUnit(x) for x in units]
         if len(units) == 1:
             unit = units[0]
             value = _convertValue (self.value, self.unit, unit)
@@ -344,15 +345,15 @@ class PhysicalQuantity:
             result = []
             value = self.value
             unit = self.unit
-            for i in range(len(units)-1,-1,-1):
-                value = value*unit.conversionFactorTo(units[i])
+            for i in units:
+                value = value*unit.conversionFactorTo(i)
                 if i == 0:
                     rounded = value
                 else:
                     rounded = _round(value)
-                result.append(self.__class__(rounded, units[i]))
+                result.append(self.__class__(rounded, i))
                 value = value - rounded
-                unit = units[i]
+                unit = i
             return tuple(result)
 
     # Contributed by Berthold Hoellmann
@@ -365,9 +366,10 @@ class PhysicalQuantity:
         new_value = self.value * self.unit.factor
         num = ''
         denom = ''
-        for i in xrange(9):
+        for i in range(9):
+        #for i in list(self.unit.powers):
             unit = _base_names[i]
-            power = self.unit.powers[i]
+            power = list(self.unit.powers)[i]
             if power < 0:
                 denom = denom + '/' + unit
                 if power < -1:
@@ -476,8 +478,11 @@ class PhysicalUnit:
         if isPhysicalUnit(other):
             return PhysicalUnit(self.names+other.names,
                                 self.factor*other.factor,
-                                map(lambda a,b: a+b,
-                                    self.powers, other.powers))
+                                #map(lambda a,b: a+b, 
+                                #    self.powers, other.powers))
+                                #[a+b for a in self.powers for b in other.powers])
+                                [sum(x) for x in zip(self.powers,other.powers)])
+                                    
         else:
             return PhysicalUnit(self.names+{str(other): 1},
                                 self.factor*other,
@@ -492,8 +497,9 @@ class PhysicalUnit:
         if isPhysicalUnit(other):
             return PhysicalUnit(self.names-other.names,
                                 self.factor/other.factor,
-                                map(lambda a,b: a-b,
-                                    self.powers, other.powers))
+                                #map(lambda a,b: a-b,
+                                #    self.powers, other.powers))
+                                [a-b for a,b in zip(self.powers, other.powers)])
         else:
             return PhysicalUnit(self.names+{str(other): -1},
                                 self.factor/other, self.powers)
@@ -506,19 +512,22 @@ class PhysicalUnit:
         if isPhysicalUnit(other):
             return PhysicalUnit(other.names-self.names,
                                 other.factor/self.factor,
-                                map(lambda a,b: a-b,
-                                    other.powers, self.powers))
+                                #map(lambda a,b: a-b,
+                                #    other.powers, self.powers))
+                                [a-b for a,b in zip(other.powers,self.powers)])
         else:
             return PhysicalUnit({str(other): 1}-self.names,
                                 other/self.factor,
-                                map(lambda x: -x, self.powers))
+                                #map(lambda x: -x, self.powers))
+                                [-x for x in self.powers])
 
     def __pow__(self, other):
         if self.offset != 0:
             raise TypeError("cannot exponentiate units with non-zero offset")
         if isinstance(other, int):
             return PhysicalUnit(other*self.names, pow(self.factor, other),
-                                map(lambda x,p=other: x*p, self.powers))
+                                #map(lambda x,p=other: x*p, self.powers))
+                                [x * other for x in self.powers])
         if isinstance(other, float):
             inv_exp = 1./other
             rounded = int(N.floor(inv_exp+0.5))
@@ -915,16 +924,16 @@ def test_PQ():
     v = PQ('120 yd/min')   # velocity: yards per minute
     t = PQ('1 h')          # time: hours
     s = v*t                # distance
-#    assert str(s) == '120.0 h*yd/min'
-#    assert s.getUnitName() == 'h*yd/min'
-#    assert abs(s.getValue() - 120) < 1E-15
+    assert str(s) == '120.0 h*yd/min'
+    assert s.getUnitName() == 'h*yd/min'
+    assert abs(s.getValue() - 120) < 1E-15
     s.convertToUnit('m')
-#    assert str(s) == '6583.68 m'
+    assert str(s) == '6583.68 m'
     v.convertToUnit('km/h')
-#    assert str(v) == '6.58368 km/h'
+    assert str(v) == '6.58368 km/h'
     c = PQ('1 cal/g/K')          # heat capacity of water
     c.convertToUnit('J/(g*K)')   # standard SI unit
-#    assert str(c) == '4.184 J/K/g'
+    assert str(c) == '4.184 J/K/g'
 
 
 def demo():
