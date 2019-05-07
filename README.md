@@ -53,12 +53,12 @@ by the `PhysicalQuantities` module.
 ## Installation
 
 ```
-sudo pip install  -e git+https://github.com/hplgit/physical-quantities.git#egg=physical-quantities
+sudo pip install  -e git+https://https://github.com/jump2conclusionsmatt/physical-quantities.git#egg=physical-quantities
 ```
 
 Or
 ```
-git clone https://github.com/hplgit/physical-quantities.git
+git clone https://github.com/https://github.com/jump2conclusionsmatt/physical-quantities.git
 cd physical-quantities
 sudo python setup.py install
 ```
@@ -73,6 +73,6 @@ in any project to compute with units.
 
 ## Python 3 version
 
-The `PhysicalQuantities.py` file in the present directory is for Python 2.
+The `PhysicalQuantities.py` file in the present directory is for Python 3.
 There is an experimental Python 3 version in the subdirectory `py23`,
 which depends on the `future` package.
