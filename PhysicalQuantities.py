@@ -11,6 +11,9 @@
 # replaced by numpy. Modifications by H. P. Langtangen
 # <hpl@simula.no>. To test: py.test/nosetests -s -v PhysicalQuantities.py)
 from functools import reduce
+import numpy as N
+import re
+
 """
 Physical quantities with units.
 
@@ -123,9 +126,6 @@ class NumberDict(dict):
         return new
 
     __truediv__ = __div__
-
-import numpy as N
-import re, string
 
 # Class definitions
 
@@ -244,7 +244,7 @@ class PhysicalQuantity:
 
     def __cmp__(self, other):
         diff = self._sum(other, 1, -1)
-        return cmp(diff.value, 0)
+        return (diff.value > 0) - (diff.value<0)#cmp(diff.value, 0)
 
     def __mul__(self, other):
         if not isPhysicalQuantity(other):
@@ -470,7 +470,7 @@ class PhysicalUnit:
     def __cmp__(self, other):
         if self.powers != other.powers:
             raise TypeError('Incompatible units')
-        return cmp(self.factor, other.factor)
+        return (self.factor > other.factor) - (self.factor < other.factor) #cmp(self.factor, other.factor)
 
     def __mul__(self, other):
         if self.offset != 0 or (isPhysicalUnit (other) and other.offset != 0):
@@ -478,9 +478,6 @@ class PhysicalUnit:
         if isPhysicalUnit(other):
             return PhysicalUnit(self.names+other.names,
                                 self.factor*other.factor,
-                                #map(lambda a,b: a+b, 
-                                #    self.powers, other.powers))
-                                #[a+b for a in self.powers for b in other.powers])
                                 [sum(x) for x in zip(self.powers,other.powers)])
                                     
         else:
@@ -497,8 +494,6 @@ class PhysicalUnit:
         if isPhysicalUnit(other):
             return PhysicalUnit(self.names-other.names,
                                 self.factor/other.factor,
-                                #map(lambda a,b: a-b,
-                                #    self.powers, other.powers))
                                 [a-b for a,b in zip(self.powers, other.powers)])
         else:
             return PhysicalUnit(self.names+{str(other): -1},
@@ -512,13 +507,10 @@ class PhysicalUnit:
         if isPhysicalUnit(other):
             return PhysicalUnit(other.names-self.names,
                                 other.factor/self.factor,
-                                #map(lambda a,b: a-b,
-                                #    other.powers, self.powers))
                                 [a-b for a,b in zip(other.powers,self.powers)])
         else:
             return PhysicalUnit({str(other): 1}-self.names,
                                 other/self.factor,
-                                #map(lambda x: -x, self.powers))
                                 [-x for x in self.powers])
 
     def __pow__(self, other):
@@ -526,7 +518,6 @@ class PhysicalUnit:
             raise TypeError("cannot exponentiate units with non-zero offset")
         if isinstance(other, int):
             return PhysicalUnit(other*self.names, pow(self.factor, other),
-                                #map(lambda x,p=other: x*p, self.powers))
                                 [x * other for x in self.powers])
         if isinstance(other, float):
             inv_exp = 1./other
@@ -737,7 +728,7 @@ def _addUnit(name, unit, comment=''):
     if comment:
         _help.append((name, comment, unit))
     if type(unit) == type(''):
-        unit = eval(unit, _unit_table)
+        unit = eval(unit, _unit_table)#, {'__builtins__':None})
         for cruft in ['__builtins__', '__args__']:
             try: del _unit_table[cruft]
             except: pass
@@ -924,8 +915,8 @@ def test_PQ():
     v = PQ('120 yd/min')   # velocity: yards per minute
     t = PQ('1 h')          # time: hours
     s = v*t                # distance
-    assert str(s) == '120.0 h*yd/min'
-    assert s.getUnitName() == 'h*yd/min'
+    assert str(s) == '120.0 yd*h/min'
+    assert s.getUnitName() == 'yd*h/min'
     assert abs(s.getValue() - 120) < 1E-15
     s.convertToUnit('m')
     assert str(s) == '6583.68 m'
@@ -933,7 +924,7 @@ def test_PQ():
     assert str(v) == '6.58368 km/h'
     c = PQ('1 cal/g/K')          # heat capacity of water
     c.convertToUnit('J/(g*K)')   # standard SI unit
-    assert str(c) == '4.184 J/K/g'
+    assert str(c) == '4.184 J/g/K'
 
 
 def demo():
