@@ -5,7 +5,7 @@ The PhysicalQuantity class made independent of [K. Hinsen's ScientificPython pac
 ## Demo
 
 ```python
-    >>> from PhysicalQuantities import PhysicalQuantity as p  # short hand
+    >>> from physicalquantities import PhysicalQuantity as p  # short hand
     >>> distance1 = p('10 m')
     >>> distance2 = p('10 km')
     >>> total = distance1 + distance2
